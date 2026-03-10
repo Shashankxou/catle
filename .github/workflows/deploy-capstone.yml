@@ -1,0 +1,105 @@
+name: Capstone Project CI / Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'capstone-project/**'
+  workflow_dispatch:
+
+jobs:
+  # ──────────────────────────────────────────────
+  # 1. Validate the Python environment
+  # ──────────────────────────────────────────────
+  validate:
+    name: Validate Python app
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: capstone-project
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies (CPU-only torch for speed)
+        run: |
+          pip install --upgrade pip
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: Syntax check
+        run: python -m py_compile app.py
+
+      - name: Verify required imports
+        run: |
+          python -c "
+          import flask, torch, torchvision, PIL, werkzeug, reportlab, transformers
+          print('All required modules importable ✓')
+          "
+
+  # ──────────────────────────────────────────────
+  # 2. Validate the Docker build
+  # ──────────────────────────────────────────────
+  docker-build:
+    name: Docker build check
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t catle-capstone ./capstone-project
+
+  # ──────────────────────────────────────────────
+  # 3. Deployment instructions (always runs)
+  # ──────────────────────────────────────────────
+  deployment-instructions:
+    name: Deployment guide
+    runs-on: ubuntu-latest
+    permissions: {}
+    if: always()
+    needs: [validate, docker-build]
+    steps:
+      - name: Print deployment instructions
+        run: |
+          echo "============================================="
+          echo " Capstone Project – Deployment Options"
+          echo "============================================="
+          echo ""
+          echo "This is a Flask application and cannot run on"
+          echo "GitHub Pages. Use one of the options below:"
+          echo ""
+          echo "─── Option 1: Render.com (recommended) ──────"
+          echo "1. Push this repo to GitHub."
+          echo "2. Go to https://dashboard.render.com/new/web"
+          echo "3. Connect this repo."
+          echo "4. Render will auto-detect render.yaml and"
+          echo "   deploy the app."
+          echo ""
+          echo "─── Option 2: Docker ────────────────────────"
+          echo "  cd capstone-project"
+          echo "  docker compose up --build"
+          echo "  # App runs at http://localhost:5000"
+          echo ""
+          echo "─── Option 3: Local venv ────────────────────"
+          echo "  cd capstone-project"
+          echo "  python -m venv .venv"
+          echo "  source .venv/bin/activate"
+          echo "  pip install -r requirements.txt"
+          echo "  python app.py"
+          echo "  # App runs at http://localhost:5000"
+          echo ""
+          echo "NOTE: The trained model file (328 MB) is not"
+          echo "stored in Git. Download it separately and"
+          echo "place it at:"
+          echo "  capstone-project/models/cattle_disease_vit_model.pth"
+          echo "============================================="

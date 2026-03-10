@@ -1,0 +1,29 @@
+# Model weights (too large for GitHub)
+capstone-project/models/*.pth
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Uploads
+capstone-project/static/uploads/*
+!capstone-project/static/uploads/.gitkeep
